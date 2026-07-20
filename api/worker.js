@@ -229,7 +229,7 @@ export default {
           engineCC: "number — engine displacement, for HS classification.",
           processingFee: "boolean — apply the 1% processing fee.",
         },
-        source: "https://github.com/YOUR-USERNAME/gh-vehicle-duty",
+        source: "https://github.com/PapaAdjei/gh-vehicle-duty",
         disclaimer: DISCLAIMER,
       });
     }
