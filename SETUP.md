@@ -7,7 +7,7 @@
     git add .
     git commit -m "Ghana vehicle duty calculator v1.0.0"
     git branch -M main
-    git remote add origin https://github.com/YOUR-USERNAME/gh-vehicle-duty.git
+    git remote add origin https://github.com/PapaAdjei/gh-vehicle-duty.git
     git push -u origin main
 
 Then edit the `repository.url` field in package.json to your real username.
@@ -15,7 +15,7 @@ Then edit the `repository.url` field in package.json to your real username.
 ## 2. Host the live app (free)
 
 Settings -> Pages -> Source: "Deploy from a branch" -> master -> /docs folder.
-Your app goes live at https://YOUR-USERNAME.github.io/gh-vehicle-duty/
+Your app goes live at https://PapaAdjei.github.io/gh-vehicle-duty/
 and is installable on phone and laptop from that link.
 
 ## 3. Publish to npm (optional)
