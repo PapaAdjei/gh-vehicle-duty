@@ -31,7 +31,7 @@ npm install gh-vehicle-duty
 Not published to npm yet? Install straight from GitHub — no extra setup needed:
 
 ```bash
-npm install github:YOUR-USERNAME/gh-vehicle-duty
+npm install github:PapaAdjei/gh-vehicle-duty
 ```
 
 Or vendor `src/duty.js` directly — it's one file with zero dependencies and works in Node ≥18, Deno, and browsers.
@@ -196,7 +196,7 @@ curl -X POST https://your-worker.workers.dev/calculate \
 
 Every response carries `ratesVersion`, `validFrom`, and a `staleness` block; `/health` returns 503 once the schedule is likely superseded.
 
-- **[Interactive playground](https://YOUR-USERNAME.github.io/gh-vehicle-duty/api.html)** — try requests in the browser, copy working code for curl/Python/JS/PHP
+- **[Interactive playground](https://PapaAdjei.github.io/gh-vehicle-duty/api.html)** — try requests in the browser, copy working code for curl/Python/JS/PHP
 - **[`api/openapi.yaml`](api/openapi.yaml)** — OpenAPI 3.1 spec; generate a typed client for Java, C#, Swift, Kotlin, Go, or anything else
 - **[`api/README.md`](api/README.md)** — endpoint reference
 - **[`api/DEPLOY.md`](api/DEPLOY.md)** — deploy your own in ~2 minutes, no command line
