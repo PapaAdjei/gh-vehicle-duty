@@ -1,0 +1,11 @@
+name = "gh-vehicle-duty-api"
+main = "worker.js"
+compatibility_date = "2026-01-01"
+
+# Deploy:
+#   npm install -g wrangler
+#   wrangler login
+#   wrangler deploy
+#
+# Local test:
+#   wrangler dev

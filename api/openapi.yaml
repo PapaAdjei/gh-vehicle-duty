@@ -1,0 +1,285 @@
+openapi: 3.1.0
+info:
+  title: gh-vehicle-duty API
+  version: 1.0.0
+  summary: Ghana vehicle import duty and levy estimates.
+  description: |
+    Calculates Ghana customs duties and levies for imported vehicles, reproducing
+    the levy schedule of a GRA Customs Bill of Entry (validated line-by-line).
+
+    **Estimate only.** This API applies a levy schedule to a customs value *you
+    supply*. It does not know GRA's official valuation, which is assessed from the
+    vehicle VIN against GRA's ICUMS/HDV benchmark database. Not affiliated with or
+    endorsed by the Ghana Revenue Authority.
+
+    ## Rate staleness
+
+    Ghana's levies change with each budget. Every response includes a `staleness`
+    object and `X-Rates-Staleness` header. Check it — if the level is not
+    `current`, surface a warning to your users. `/health` returns 503 once the
+    schedule is likely superseded.
+
+    If you are writing JavaScript, prefer the npm library over this API: no
+    network call, offline-capable, and you stay pinned to a known rate version.
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+  contact:
+    name: Source and issues
+    url: https://github.com/YOUR-USERNAME/gh-vehicle-duty
+
+servers:
+  - url: https://gh-vehicle-duty-api.YOUR-SUBDOMAIN.workers.dev
+    description: Replace with your deployment
+
+tags:
+  - name: calculation
+  - name: metadata
+
+paths:
+  /:
+    get:
+      tags: [metadata]
+      summary: Service info and parameter reference
+      responses:
+        "200":
+          description: Service description
+          content:
+            application/json:
+              schema:
+                type: object
+
+  /calculate:
+    post:
+      tags: [calculation]
+      summary: Calculate duty breakdown
+      description: |
+        Supply either `customsValue` (CIF in GHS) **or** `fob` plus `exchangeRate`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CalculateRequest"
+            examples:
+              byCustomsValue:
+                summary: Known customs value
+                value:
+                  customsValue: 750093
+                  fobGhs: 732320.16
+                  dutyRate: 0.20
+              byInvoice:
+                summary: From an invoice in USD
+                value:
+                  fob: 15000
+                  freight: 1200
+                  exchangeRate: 12.4
+                  depreciation: 0.2
+              byVehicle:
+                summary: Let body type set the rate
+                value:
+                  customsValue: 400000
+                  bodyType: Pickup
+                  engineCC: 3500
+      responses:
+        "200":
+          description: Duty breakdown
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CalculateResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+    get:
+      tags: [calculation]
+      summary: Calculate via query string
+      parameters:
+        - name: customsValue
+          in: query
+          schema: { type: number }
+          description: CIF in GHS
+          example: 750093
+        - name: fob
+          in: query
+          schema: { type: number }
+        - name: freight
+          in: query
+          schema: { type: number }
+        - name: insurance
+          in: query
+          schema: { type: number }
+          description: Defaults to ~1% of fob
+        - name: exchangeRate
+          in: query
+          schema: { type: number }
+        - name: depreciation
+          in: query
+          schema: { type: number, minimum: 0, maximum: 0.99 }
+        - name: dutyRate
+          in: query
+          schema: { type: number, minimum: 0, maximum: 1 }
+        - name: bodyType
+          in: query
+          schema: { type: string }
+          example: SUV
+        - name: engineCC
+          in: query
+          schema: { type: number }
+        - name: processingFee
+          in: query
+          schema: { type: boolean }
+      responses:
+        "200":
+          description: Duty breakdown
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CalculateResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+  /rates:
+    get:
+      tags: [metadata]
+      summary: Full levy schedule
+      responses:
+        "200":
+          description: The versioned rate schedule
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  version: { type: string, example: "2026.1" }
+                  validFrom: { type: string, format: date }
+                  onCustomsValue:
+                    type: array
+                    items: { $ref: "#/components/schemas/Levy" }
+                  onVatBase:
+                    type: array
+                    items: { $ref: "#/components/schemas/Levy" }
+                  staleness: { $ref: "#/components/schemas/Staleness" }
+
+  /health:
+    get:
+      tags: [metadata]
+      summary: Uptime and rate-freshness check
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean }
+                  status: { type: string, enum: [current, aging] }
+                  staleness: { $ref: "#/components/schemas/Staleness" }
+        "503":
+          description: Rate schedule likely superseded — do not rely on figures
+
+components:
+  responses:
+    BadRequest:
+      description: Invalid input
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error: { type: boolean, example: true }
+              message: { type: string }
+
+  schemas:
+    CalculateRequest:
+      type: object
+      properties:
+        customsValue:
+          type: number
+          description: CIF in GHS — the figure GRA assesses. Either this or fob+exchangeRate.
+        fobGhs:
+          type: number
+          description: FOB in GHS; network-charge base. Defaults to customsValue.
+        fob:
+          type: number
+          description: Price in foreign currency.
+        freight: { type: number }
+        insurance:
+          type: number
+          description: Defaults to ~1% of fob if omitted.
+        exchangeRate:
+          type: number
+          description: GHS per unit foreign currency.
+        depreciation:
+          type: number
+          minimum: 0
+          maximum: 0.99
+          description: Used-vehicle valuation haircut, as a fraction.
+        dutyRate:
+          type: number
+          minimum: 0
+          maximum: 1
+          description: Defaults to 0.20, or derived from bodyType.
+        bodyType:
+          type: string
+          description: e.g. "SUV", "Pickup". Sets duty rate and HS code.
+        engineCC:
+          type: number
+          description: Engine displacement, for HS classification.
+        processingFee:
+          type: boolean
+          default: false
+
+    Levy:
+      type: object
+      properties:
+        code: { type: string, example: "02" }
+        name: { type: string, example: Import VAT }
+        rate: { type: number, example: 0.15 }
+
+    Line:
+      type: object
+      properties:
+        code: { type: string, example: "01" }
+        name: { type: string, example: Import Duty }
+        base:
+          type: string
+          enum: [customsValue, vatBase, fob, networkCharge, fixed]
+          description: Which base this levy was charged on.
+        baseAmount: { type: number, nullable: true }
+        rate: { type: number, nullable: true }
+        amount: { type: number }
+
+    Staleness:
+      type: object
+      properties:
+        level:
+          type: string
+          enum: [current, aging, stale]
+        ageDays: { type: integer }
+        validFrom: { type: string, format: date }
+        version: { type: string }
+        message: { type: string }
+
+    CalculateResponse:
+      type: object
+      properties:
+        customsValue: { type: number }
+        fobGhs: { type: number }
+        vatBase:
+          type: number
+          description: customsValue + importDuty — the base for VAT, NHIL, GET Fund.
+        importDuty: { type: number }
+        lines:
+          type: array
+          items: { $ref: "#/components/schemas/Line" }
+        total: { type: number, example: 367357.96 }
+        effectiveRate:
+          type: number
+          description: total / customsValue
+          example: 0.4897
+        currency: { type: string, example: GHS }
+        ratesVersion: { type: string, example: "2026.1" }
+        validFrom: { type: string, format: date }
+        staleness: { $ref: "#/components/schemas/Staleness" }
+        disclaimer: { type: string }

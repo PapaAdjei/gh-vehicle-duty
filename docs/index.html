@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#064225" />
+<link rel="manifest" href="manifest.webmanifest" />
+<link rel="apple-touch-icon" href="icon-192.png" />
+<title>GH Vehicle Duty</title>
+<style>
+  :root{ --green:#065f3c; --green-d:#064225; --gold:#e8b23a; --red:#b91c1c;
+         --paper:#f5f5f4; --line:#e7e5e4; --ink:#1c1917; --muted:#78716c; }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);
+       font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+       padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom);}
+  .wrap{max-width:760px;margin:0 auto;padding:22px 14px 40px}
+  .head{display:flex;gap:12px;align-items:center;margin-bottom:6px}
+  .bar{width:6px;height:38px;border-radius:99px;background:linear-gradient(var(--green),var(--gold),var(--red))}
+  h1{font-size:22px;margin:0;color:#052e1a;letter-spacing:-.02em}
+  .sub{font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);margin-top:2px}
+  .grid{display:grid;gap:16px;margin-top:18px}
+  @media(min-width:720px){.grid{grid-template-columns:1fr 1fr}}
+  .card{background:#fff;border:1px solid var(--line);border-radius:14px;box-shadow:0 1px 2px rgba(0,0,0,.04)}
+  .pad{padding:16px}
+  label.lbl{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);display:block;margin-bottom:6px}
+  .seg{display:grid;grid-template-columns:1fr 1fr;gap:4px;background:#f5f5f4;padding:4px;border-radius:10px}
+  .seg button{padding:9px;border:0;border-radius:7px;background:transparent;color:#57534e;font-size:13px;font-weight:600;cursor:pointer;text-transform:capitalize}
+  .seg button.on{background:var(--green);color:#fff;box-shadow:0 1px 2px rgba(0,0,0,.15)}
+  .seg.dark button.on{background:#292524}
+  input[type=number],input[type=text],select{width:100%;border:1px solid #d6d3d1;border-radius:8px;padding:9px 11px;font:600 14px ui-monospace,Menlo,monospace;color:#292524;background:#fff;-webkit-appearance:none;appearance:none}
+  select{font-family:inherit;font-weight:600}
+  input:focus,select:focus{outline:0;border-color:var(--green);box-shadow:0 0 0 3px rgba(6,95,60,.18)}
+  .field{margin-bottom:13px}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:11px}
+  .three{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+  .vinrow{display:grid;grid-template-columns:1fr auto;gap:8px}
+  .btn{border:0;border-radius:8px;background:var(--green);color:#fff;font-weight:700;font-size:13px;padding:0 16px;cursor:pointer;white-space:nowrap}
+  .btn:disabled{opacity:.5}
+  .btn.ghost{background:#f0fdf4;color:#065f3c;border:1px solid #bbf7d0;font-size:12px;padding:7px 10px;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;border-radius:8px;cursor:pointer;font-weight:700}
+  .raterow{display:flex;gap:8px;margin-top:6px;flex-wrap:wrap}
+  .raterow .btn.ghost{flex:1;min-width:130px}
+  .rates{display:flex;gap:5px;margin-top:2px}
+  .rates button{flex:1;padding:9px;border:0;border-radius:8px;background:#f5f5f4;color:#57534e;font:600 14px ui-monospace,monospace;cursor:pointer}
+  .rates button.on{background:var(--gold);color:#1c1917;font-weight:800}
+  .hint{font-size:10.5px;color:#a8a29e;margin-top:5px;line-height:1.4}
+  input[type=range]{width:100%;accent-color:var(--green)}
+  .chk{display:flex;align-items:center;gap:8px;font-size:13.5px;color:#44403c;cursor:pointer;margin-top:4px}
+  .chk input{width:16px;height:16px;accent-color:var(--green)}
+  .total{background:var(--green-d);color:#fff;border-radius:14px;padding:16px}
+  .total .t1{font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:#6ee7b7;opacity:.85}
+  .total .big{font:800 30px ui-monospace,monospace;margin:4px 0 0}
+  .meta{display:flex;gap:18px;margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,.18);font-size:12px}
+  .meta span.k{color:#6ee7b7;opacity:.8;display:block;font-size:11px}
+  .meta .mono{font-family:ui-monospace,monospace}
+  .eff{color:var(--gold);font-weight:800}
+  table{width:100%;border-collapse:collapse}
+  .thead{background:#292524;color:#d6d3d1;font-size:10px;text-transform:uppercase;letter-spacing:.05em}
+  .thead td{padding:8px 12px}
+  tbody td{padding:7px 12px;border-bottom:1px solid #f0efed;font-size:13px;vertical-align:baseline}
+  .code{font:11px ui-monospace,monospace;color:#a8a29e;width:34px}
+  .amt{text-align:right;font:13px ui-monospace,monospace;color:#292524}
+  .rt{text-align:right;font:11px ui-monospace,monospace;color:#a8a29e}
+  tr.strong td{background:#ecfdf5}
+  tr.strong .nm,tr.strong .amt{font-weight:800;color:#064e3b}
+  .sec td{background:#fafaf9;font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:#a8a29e;padding:5px 12px}
+  tr.grand td{background:#fef2f2;padding:13px 12px}
+  tr.grand .nm{font-weight:800;color:#7f1d1d;font-size:14px}
+  tr.grand .amt{font-weight:800;color:#991b1b;font-size:17px}
+  .note{font-size:10.5px;color:#a8a29e;line-height:1.55;margin-top:4px}
+  .ovf{border:1px solid var(--line);border-radius:14px;overflow:hidden;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.04)}
+  .specs{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+  .chip{font:600 11px ui-monospace,monospace;background:#ecfdf5;color:#065f46;border:1px solid #a7f3d0;padding:3px 8px;border-radius:6px}
+  .chip.hs{background:#fefce8;color:#854d0e;border-color:#fde68a}
+  .warn{margin-top:10px;background:#fef2f2;border:1px solid #fecaca;color:#991b1b;font-size:11.5px;padding:8px 10px;border-radius:8px;line-height:1.45}
+  .status{font-size:11px;margin-top:6px;min-height:14px}
+  .status.ok{color:#047857}.status.err{color:#b91c1c}.status.load{color:#a8a29e}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="head">
+    <div class="bar"></div>
+    <div><h1>Vehicle Duty Calculator</h1><div class="sub">Ghana Revenue Authority · clearing estimate</div></div>
+  </div>
+
+  <div class="grid">
+    <!-- inputs -->
+    <div class="card pad">
+      <!-- VIN decode -->
+      <div class="field">
+        <label class="lbl">Decode by VIN / chassis no.</label>
+        <div class="vinrow">
+          <input type="text" id="vin" maxlength="17" placeholder="17-character VIN (optional)" autocapitalize="characters" spellcheck="false">
+          <button class="btn" id="vinBtn">Decode</button>
+        </div>
+        <div class="status" id="vinStatus"></div>
+      </div>
+
+      <!-- Make / model / year -->
+      <div class="field">
+        <label class="lbl">Make &amp; model <span style="font-weight:600;text-transform:none;letter-spacing:0;color:#a8a29e">· live directory (NHTSA vPIC)</span></label>
+        <div class="three">
+          <select id="make"></select>
+          <select id="model"></select>
+          <input type="number" id="year" placeholder="Year" min="1990" max="2027">
+        </div>
+        <div class="status" id="modelStatus"></div>
+        <div class="specs" id="specs"></div>
+        <div id="ageWarn"></div>
+      </div>
+
+      <div class="field">
+        <label class="lbl">Vehicle condition</label>
+        <div class="seg" id="condSeg">
+          <button data-v="new">new</button>
+          <button data-v="used" class="on">used</button>
+        </div>
+      </div>
+      <div class="field">
+        <label class="lbl">Value source</label>
+        <div class="seg dark" id="modeSeg">
+          <button data-v="invoice" class="on">Invoice (USD)</button>
+          <button data-v="quick">Customs value (GHS)</button>
+        </div>
+      </div>
+
+      <div id="invoiceBox">
+        <div class="field">
+          <label class="lbl">Exchange rate · USD→GHS <span id="rateSrc" style="font-weight:600;text-transform:none;letter-spacing:0;color:#a8a29e"></span></label>
+          <input type="number" id="rate" value="11.7359" step="0.0001">
+          <div class="raterow">
+            <button type="button" class="btn ghost" id="liveBtn">↻ Live rate</button>
+            <a class="btn ghost" id="bogLink" href="https://www.cedirates.com/company/bank-of-ghana/" target="_blank" rel="noopener">Bank of Ghana selling ↗</a>
+          </div>
+          <div class="hint">"Live rate" pulls the current interbank USD→GHS automatically. For the exact <b>Bank of Ghana selling</b> rate, tap the CediRates button, read today's <b>Selling</b> figure and type it in.</div>
+        </div>
+        <div class="field two">
+          <div><label class="lbl">FOB / price (USD)</label><input type="number" id="fob" placeholder="e.g. 15000"></div>
+          <div><label class="lbl">Freight (USD)</label><input type="number" id="freight" placeholder="e.g. 900–1,800"></div>
+        </div>
+        <div class="field"><label class="lbl">Insurance (USD) <span id="insAuto" style="font-weight:600;text-transform:none;letter-spacing:0;color:#a8a29e">· auto 1% of price</span></label><input type="number" id="insurance" placeholder="auto">
+          <div class="hint">Insurance is normally ~1% of the vehicle's value, so it fills in automatically. Type your own figure to override; clear it to go back to auto.</div>
+        </div>
+      </div>
+
+      <div id="quickBox" style="display:none">
+        <div class="field"><label class="lbl">Customs value / CIF (GHS)</label><input type="number" id="cvDirect" placeholder="e.g. 180000">
+          <div class="hint">Network charge approximated from this value.</div></div>
+      </div>
+
+      <div class="field">
+        <label class="lbl">Import duty rate <span id="autoRate" style="color:#065f3c"></span></label>
+        <div class="rates" id="dutyRates">
+          <button data-v="0.05">5%</button><button data-v="0.1">10%</button><button data-v="0.2" class="on">20%</button>
+        </div>
+        <div class="hint">Auto-set from body type. Most saloon cars &amp; SUVs are 20%; override per your HS code.</div>
+      </div>
+
+      <div class="field" id="depBox">
+        <label class="lbl">Valuation depreciation · <span id="depVal" style="color:#065f3c;font-weight:800">0%</span></label>
+        <input type="range" id="dep" min="0" max="80" value="0">
+        <div class="hint">GRA assesses used cars on a VIN-based benchmark (HDV), then depreciates by age. Leave at 0% to use your value as-is.</div>
+      </div>
+
+      <label class="chk"><input type="checkbox" id="proc"> Add 1% processing fee</label>
+    </div>
+
+    <!-- results -->
+    <div>
+      <div class="total">
+        <div class="t1">Total duties &amp; taxes payable</div>
+        <div class="big">GH₵ <span id="tTotal">—</span></div>
+        <div class="meta">
+          <div><span class="k">Customs value</span><span class="mono">GH₵ <span id="tCv">—</span></span></div>
+          <div><span class="k">Effective rate</span><span class="mono eff" id="tEff">—</span></div>
+        </div>
+        <div id="emptyMsg" style="margin-top:10px;font-size:11.5px;color:#6ee7b7;opacity:.9;line-height:1.5">Pick the vehicle, then enter its price to calculate.</div>
+      </div>
+
+      <div class="ovf" style="margin-top:16px">
+        <table>
+          <tr class="thead"><td>Code</td><td>Charge</td><td style="text-align:right">Rate</td><td style="text-align:right">GH₵</td></tr>
+          <tbody id="rows"></tbody>
+        </table>
+      </div>
+      <p class="note">Estimate only. Levy rates are from a validated GRA Bill of Entry (post-Jan 2026 reforms). Make/model and VIN data come from NHTSA's free vPIC directory; the official duty is assessed from your VIN against GRA's ICUMS/HDV benchmark and HS classification. Confirm with your licensed clearing agent.</p>
+      <p class="note" style="margin-top:8px">Developer? This calculator is open source — <a href="api.html" style="color:#065f3c;font-weight:600">use the API or npm library</a>.</p>
+    </div>
+  </div>
+</div>
+
+<script>
+const VPIC="https://vpic.nhtsa.dot.gov/api/vehicles/";
+/* common makes imported into Ghana (Make dropdown). Models are pulled live per make. */
+const MAKES=["Acura","Audi","BMW","Buick","Cadillac","Chevrolet","Chrysler","Dodge","Fiat","Ford","GMC","Honda","Hyundai","Infiniti","Isuzu","Jaguar","Jeep","Kia","Land Rover","Lexus","Lincoln","Mazda","Mercedes-Benz","Mini","Mitsubishi","Nissan","Peugeot","Porsche","Ram","Renault","Subaru","Suzuki","Tesla","Toyota","Volkswagen","Volvo"];
+/* offline fallback specs: model -> [cc, body] */
+const CAT={
+ "Acura":[["MDX",3500,"SUV"],["RDX",2000,"SUV"],["TLX",2000,"Sedan"]],
+ "Ford":[["Focus",2000,"Hatchback"],["Escape",1500,"SUV"],["Explorer",3500,"SUV"],["F-150",3500,"Pickup"]],
+ "Honda":[["Civic",1800,"Sedan"],["Accord",1500,"Sedan"],["CR-V",1500,"SUV"],["Pilot",3500,"SUV"]],
+ "Hyundai":[["Elantra",2000,"Sedan"],["Sonata",2400,"Sedan"],["Tucson",2000,"SUV"],["Santa Fe",2400,"SUV"]],
+ "Kia":[["Rio",1600,"Sedan"],["Optima",2400,"Sedan"],["Sportage",2400,"SUV"],["Sorento",3300,"SUV"]],
+ "Nissan":[["Sentra",1800,"Sedan"],["Altima",2500,"Sedan"],["Rogue",2500,"SUV"],["Frontier",3800,"Pickup"]],
+ "Toyota":[["Corolla",1800,"Sedan"],["Camry",2500,"Sedan"],["RAV4",2500,"SUV"],["Highlander",3500,"SUV"],["Land Cruiser",4600,"SUV"],["Tacoma",3500,"Pickup"],["Hilux",2800,"Pickup"]],
+ "Mercedes-Benz":[["C-Class",2000,"Sedan"],["E-Class",3000,"Sedan"],["GLC",2000,"SUV"],["GLE",3000,"SUV"]],
+ "BMW":[["3 Series",2000,"Sedan"],["5 Series",3000,"Sedan"],["X3",2000,"SUV"],["X5",3000,"SUV"]],
+ "Lexus":[["ES",3500,"Sedan"],["RX",3500,"SUV"],["GX",4600,"SUV"],["LX",5700,"SUV"]]
+};
+const PASSENGER=["Sedan","Hatchback","SUV","Minivan","Wagon","Coupe","Convertible"];
+function bodyIsPickup(b){ b=(b||"").toLowerCase(); return b.includes("pickup")||b.includes("truck"); }
+function dutyForBody(b){ return bodyIsPickup(b)?0.10:0.20; }
+function hsBand(cc){ if(!cc)return"8703"; if(cc<=1000)return"8703.21"; if(cc<=1500)return"8703.22"; if(cc<=3000)return"8703.23"; return"8703.24"; }
+
+const S={cond:"used",mode:"invoice",duty:0.2,dep:0,proc:false};
+const CV=[["06","ECOWAS Levy (ETLS)",.005],["31","Vehicle Examination Fee",.01],["78","Special Import Levy",.02],["87","EXIM Bank Levy",.0075],["98","African Union Import Levy",.002]];
+const VAT=[["02","Import VAT",.15],["47","Import NHIL",.025],["88","GET Fund Levy",.025]];
+const NCS=[["33","Network Charge VAT",.15],["48","Network Charge NHIL",.025],["89","Network Charge GET Fund",.025]];
+const SHIP=12, DISINF=410.76, NOW=2026;
+const $=id=>document.getElementById(id);
+const num=id=>parseFloat($(id).value)||0;
+const f=n=>new Intl.NumberFormat("en-GH",{minimumFractionDigits:2,maximumFractionDigits:2}).format(isFinite(n)?n:0);
+const p=n=>{let s=(n*100).toFixed(2);return s.replace(/\.00$/,"")+"%";};
+
+function calc(){
+  const dep=S.cond==="used"?S.dep/100:0;
+  let cv,fobGhs;
+  if(S.mode==="invoice"){
+    const r=num("rate"),eff=num("fob")*(1-dep);
+    fobGhs=eff*r; cv=(eff+num("freight")+insuranceValue())*r;
+  }else{ cv=num("cvDirect")*(1-dep); fobGhs=cv; }
+  const duty=cv*S.duty, proc=S.proc?cv*0.01:0;
+  const cvL=CV.map(([c,n,rt])=>[c,n,rt,cv*rt]);
+  const vatBase=cv+duty;
+  const vatL=VAT.map(([c,n,rt])=>[c,n,rt,vatBase*rt]);
+  const nc=fobGhs*0.004;
+  const ncL=NCS.map(([c,n,rt])=>[c,n,rt,nc*rt]);
+  let total=duty+proc+SHIP+DISINF+nc;
+  cvL.forEach(x=>total+=x[3]); vatL.forEach(x=>total+=x[3]); ncL.forEach(x=>total+=x[3]);
+  return {cv,duty,proc,cvL,vatBase,vatL,nc,ncL,total,eff:cv>0?total/cv:0};
+}
+function render(){
+  const r=calc();
+  /* empty state: no value entered yet — prompt instead of showing a total */
+  const hasValue = S.mode==="invoice" ? num("fob")>0 : num("cvDirect")>0;
+  const box=$("emptyMsg");
+  if(!hasValue){
+    $("tTotal").textContent="—"; $("tCv").textContent="—"; $("tEff").textContent="—";
+    if(box) box.style.display="";
+    $("rows").innerHTML=`<tr><td colspan="4" style="padding:22px 12px;text-align:center;color:#a8a29e;font-size:12.5px;line-height:1.6">Enter the vehicle's ${S.mode==="invoice"?"price (FOB)":"customs value"} above<br>to see the full duty breakdown.</td></tr>`;
+    return;
+  }
+  if(box) box.style.display="none";
+  $("tTotal").textContent=f(r.total); $("tCv").textContent=f(r.cv); $("tEff").textContent=p(r.eff);
+  let h=`<tr class="strong"><td class="code">01</td><td class="nm">Import Duty</td><td class="rt">${p(S.duty)}</td><td class="amt">${f(r.duty)}</td></tr>`;
+  if(r.proc>0)h+=`<tr><td class="code">05</td><td>Processing Fee</td><td class="rt">1%</td><td class="amt">${f(r.proc)}</td></tr>`;
+  r.cvL.forEach(([c,n,rt,a])=>h+=`<tr><td class="code">${c}</td><td>${n}</td><td class="rt">${p(rt)}</td><td class="amt">${f(a)}</td></tr>`);
+  h+=`<tr class="sec"><td colspan="4">On VAT base (CIF + duty = GH₵ ${f(r.vatBase)})</td></tr>`;
+  r.vatL.forEach(([c,n,rt,a])=>h+=`<tr><td class="code">${c}</td><td>${n}</td><td class="rt">${p(rt)}</td><td class="amt">${f(a)}</td></tr>`);
+  h+=`<tr class="sec"><td colspan="4">Network charges (on FOB)</td></tr>`;
+  h+=`<tr><td class="code">32</td><td>Network Charge</td><td class="rt">0.4%</td><td class="amt">${f(r.nc)}</td></tr>`;
+  r.ncL.forEach(([c,n,rt,a])=>h+=`<tr><td class="code">${c}</td><td>${n}</td><td class="rt">${p(rt)}</td><td class="amt">${f(a)}</td></tr>`);
+  h+=`<tr class="sec"><td colspan="4">Fixed fees</td></tr>`;
+  h+=`<tr><td class="code">45</td><td>Shippers Authority SNF</td><td class="rt">flat</td><td class="amt">${f(SHIP)}</td></tr>`;
+  h+=`<tr><td class="code">63</td><td>GHS Disinfection Fee</td><td class="rt">flat</td><td class="amt">${f(DISINF)}</td></tr>`;
+  h+=`<tr class="grand"><td colspan="2" class="nm">TOTAL PAYABLE</td><td></td><td class="amt">${f(r.total)}</td></tr>`;
+  $("rows").innerHTML=h;
+}
+
+function setDuty(v){ S.duty=v; document.querySelectorAll("#dutyRates button").forEach(b=>b.classList.toggle("on",+b.dataset.v===v)); }
+function showSpecs(cc,body){
+  const pass=!bodyIsPickup(body);
+  $("specs").innerHTML=
+    (cc?`<span class="chip">${cc} cc</span>`:"")+
+    (body?`<span class="chip">${body}</span>`:"")+
+    `<span class="chip hs">HS ${hsBand(cc)}</span>`+
+    `<span class="chip ${pass?'':'hs'}">${pass?'Passenger 8703':'Commercial 8704'}</span>`;
+}
+function checkAge(){
+  const y=parseInt($("year").value); const w=$("ageWarn");
+  if(!y){w.innerHTML="";return;}
+  const age=NOW-y;
+  if(age>=10) w.innerHTML=`<div class="warn">⚠ About ${age} years old. Vehicles 10+ years may face import restrictions/penalties at clearance.</div>`;
+  else if(age>=6) w.innerHTML=`<div class="warn" style="background:#fffbeb;border-color:#fde68a;color:#92400e">Note: ${age} years old — higher depreciation typically applied.</div>`;
+  else w.innerHTML="";
+}
+
+/* ---- populate makes ---- */
+function fillMakes(){
+  const sel=$("make"); sel.innerHTML="";
+  MAKES.forEach(m=>{const o=document.createElement("option");o.value=m;o.textContent=m;sel.appendChild(o);});
+}
+/* ---- live models from vPIC, fallback to CAT ---- */
+async function fillModels(){
+  const make=$("make").value, sel=$("model"), st=$("modelStatus");
+  sel.innerHTML=""; st.className="status load"; st.textContent="Loading models…";
+  let models=[];
+  try{
+    const res=await fetch(VPIC+"GetModelsForMake/"+encodeURIComponent(make)+"?format=json");
+    const data=await res.json();
+    models=[...new Set((data.Results||[]).map(r=>r.Model_Name).filter(Boolean))].sort();
+    if(models.length) st.className="status ok", st.textContent=models.length+" models · live";
+  }catch(e){ models=[]; }
+  if(!models.length){
+    models=(CAT[make]||[]).map(r=>r[0]);
+    st.className="status err"; st.textContent=models.length?"Offline — showing saved models":"No saved models for this make (use VIN or type value)";
+  }
+  models.forEach(m=>{const o=document.createElement("option");o.value=m;o.textContent=m;sel.appendChild(o);});
+  applyModel();
+}
+function applyModel(){
+  const make=$("make").value, model=$("model").value;
+  const row=(CAT[make]||[]).find(r=>r[0]===model);
+  if(row){ const [,cc,body]=row; setDuty(dutyForBody(body)); $("autoRate").textContent="· auto "+p(dutyForBody(body)); showSpecs(cc,body); }
+  else { setDuty(0.20); $("autoRate").textContent="· default 20%"; showSpecs(null,"Sedan"); } // cc unknown from name; VIN gives exact
+  checkAge(); render();
+}
+
+/* ---- VIN decode via vPIC ---- */
+async function decodeVin(){
+  const vin=$("vin").value.trim().toUpperCase(); const st=$("vinStatus");
+  if(vin.length<11){ st.className="status err"; st.textContent="Enter a full VIN (17 characters)."; return; }
+  st.className="status load"; st.textContent="Decoding VIN…"; $("vinBtn").disabled=true;
+  try{
+    const res=await fetch(VPIC+"DecodeVinValues/"+encodeURIComponent(vin)+"?format=json");
+    const d=(await res.json()).Results[0]||{};
+    const make=d.Make, model=d.Model, yr=d.ModelYear, body=d.BodyClass;
+    let cc=parseInt(d.DisplacementCC)|| (d.DisplacementL?Math.round(parseFloat(d.DisplacementL)*1000):null);
+    if(!make){ st.className="status err"; st.textContent="Couldn't decode that VIN."; $("vinBtn").disabled=false; return; }
+    // set make (add if not in list)
+    const mk=MAKES.find(m=>m.toLowerCase()===(make||"").toLowerCase())||make;
+    if(![...$("make").options].some(o=>o.value===mk)){ const o=document.createElement("option");o.value=mk;o.textContent=mk;$("make").appendChild(o); }
+    $("make").value=mk;
+    await fillModels();
+    if(model){ if(![...$("model").options].some(o=>o.value===model)){const o=document.createElement("option");o.value=model;o.textContent=model;$("model").appendChild(o);} $("model").value=model; }
+    if(yr) $("year").value=yr;
+    setDuty(dutyForBody(body)); $("autoRate").textContent="· auto "+p(dutyForBody(body));
+    showSpecs(cc,body||"Sedan"); checkAge();
+    if(S.cond==="new"&&yr&&NOW-parseInt(yr)>1){} // leave condition to user
+    st.className="status ok"; st.textContent=`✓ ${yr||""} ${make} ${model||""}`.trim()+(cc?` · ${cc} cc`:"");
+    render();
+  }catch(e){
+    st.className="status err"; st.textContent="VIN decode needs internet — fill make/model manually.";
+  }
+  $("vinBtn").disabled=false;
+}
+
+function seg(id,key,after){document.querySelectorAll("#"+id+" button").forEach(b=>b.onclick=()=>{
+  document.querySelectorAll("#"+id+" button").forEach(x=>x.classList.remove("on"));
+  b.classList.add("on"); S[key]=isNaN(+b.dataset.v)?b.dataset.v:+b.dataset.v; after&&after(); render();});}
+seg("condSeg","cond",()=>$("depBox").style.display=S.cond==="used"?"":"none");
+seg("modeSeg","mode",()=>{$("invoiceBox").style.display=S.mode==="invoice"?"":"none";$("quickBox").style.display=S.mode==="quick"?"":"none";});
+seg("dutyRates","duty",()=>$("autoRate").textContent="");
+$("dep").oninput=e=>{S.dep=+e.target.value;$("depVal").textContent=S.dep+"%";render();};
+$("proc").onchange=e=>{S.proc=e.target.checked;render();};
+$("year").oninput=checkAge;
+$("vinBtn").onclick=decodeVin;
+$("vin").addEventListener("keydown",e=>{ if(e.key==="Enter")decodeVin(); });
+$("vin").addEventListener("input",e=>{ if(e.target.value.trim().length===17)decodeVin(); });
+/* ---- insurance: auto ~1% of price unless the user types their own ---- */
+const INS_RATE=0.01;
+function insuranceValue(){
+  const typed=$("insurance").value.trim();
+  if(typed!=="" && !isNaN(parseFloat(typed))) return parseFloat(typed);
+  return num("fob")*INS_RATE;                     // auto
+}
+function syncInsurance(){
+  const typed=$("insurance").value.trim();
+  const auto=num("fob")*INS_RATE;
+  if(typed===""){
+    $("insurance").placeholder = auto>0 ? auto.toFixed(2) : "auto";
+    $("insAuto").textContent="· auto 1% of price";
+  } else {
+    $("insAuto").textContent="· manual override";
+  }
+}
+
+["rate","fob","freight","insurance","cvDirect"].forEach(id=>$(id).oninput=()=>{syncInsurance();render();});
+
+/* ---- live USD->GHS rate (keyless, CORS-open). Interbank reference; BoG selling via CediRates link ---- */
+async function fetchLive(auto){
+  const st=$("rateSrc"); st.textContent="· updating…";
+  try{
+    const r=await fetch("https://open.er-api.com/v6/latest/USD");
+    const d=await r.json();
+    const g=d&&d.rates&&d.rates.GHS;
+    if(g){
+      $("rate").value=(+g).toFixed(4);
+      const dt=(d.time_last_update_utc?new Date(d.time_last_update_utc):new Date()).toISOString().slice(0,10);
+      st.textContent="· interbank "+dt;
+      render();
+    } else st.textContent="· couldn't read rate — enter manually";
+  }catch(e){
+    st.textContent=auto?"· using saved rate (offline)":"· offline — enter manually or tap CediRates";
+  }
+}
+$("liveBtn").onclick=()=>fetchLive(false);
+fetchLive(true);   // auto-refresh to current rate on open
+
+fillMakes();
+$("make").value="Toyota"; $("make").onchange=fillModels; $("model").onchange=applyModel;
+$("year").value=2026;
+fillModels();
+if("serviceWorker" in navigator){navigator.serviceWorker.register("sw.js").catch(()=>{});}
+</script>
+</body>
+</html>

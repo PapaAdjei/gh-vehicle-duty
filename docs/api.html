@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>gh-vehicle-duty API — for developers</title>
+<style>
+  :root{--green:#065f3c;--green-d:#064225;--gold:#e8b23a;--red:#b91c1c;
+        --paper:#f5f5f4;--line:#e7e5e4;--ink:#1c1917;--muted:#78716c;--code:#1c1917}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);
+       font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;line-height:1.6}
+  .wrap{max-width:860px;margin:0 auto;padding:28px 16px 60px}
+  .head{display:flex;gap:12px;align-items:center}
+  .bar{width:6px;height:42px;border-radius:99px;background:linear-gradient(var(--green),var(--gold),var(--red))}
+  h1{font-size:24px;margin:0;letter-spacing:-.02em;color:#052e1a}
+  .sub{font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+  h2{font-size:17px;margin:34px 0 10px;color:#052e1a}
+  p{font-size:14.5px;color:#44403c}
+  a{color:var(--green)}
+  .card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:18px;margin-top:14px;
+        box-shadow:0 1px 2px rgba(0,0,0,.04)}
+  code,pre{font-family:ui-monospace,Menlo,monospace}
+  pre{background:var(--code);color:#e7e5e4;padding:14px;border-radius:10px;overflow-x:auto;font-size:12.5px;line-height:1.55}
+  pre .k{color:#6ee7b7}.pre-wrap{position:relative}
+  .copy{position:absolute;top:8px;right:8px;background:#44403c;color:#e7e5e4;border:0;border-radius:6px;
+        padding:4px 9px;font-size:11px;cursor:pointer;font-weight:600}
+  .copy:hover{background:#57534e}
+  label{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);display:block;margin-bottom:5px}
+  input,select{width:100%;border:1px solid #d6d3d1;border-radius:8px;padding:9px 11px;
+               font:600 13.5px ui-monospace,monospace;color:#292524;background:#fff}
+  input:focus,select:focus{outline:0;border-color:var(--green);box-shadow:0 0 0 3px rgba(6,95,60,.16)}
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:11px}
+  .btn{border:0;border-radius:9px;background:var(--green);color:#fff;font-weight:700;font-size:14px;
+       padding:11px 20px;cursor:pointer}
+  .btn:hover{background:var(--green-d)}.btn:disabled{opacity:.5;cursor:default}
+  .out{margin-top:14px;background:var(--code);color:#e7e5e4;border-radius:10px;padding:14px;
+       font:12.5px ui-monospace,monospace;white-space:pre-wrap;max-height:340px;overflow:auto;display:none}
+  .pill{display:inline-block;font:700 10px ui-monospace,monospace;padding:3px 8px;border-radius:5px;
+        background:#ecfdf5;color:#065f46;border:1px solid #a7f3d0;margin-right:6px}
+  .pill.post{background:#fefce8;color:#854d0e;border-color:#fde68a}
+  .warn{background:#fffbeb;border:1px solid #fde68a;color:#92400e;border-radius:10px;padding:12px 14px;
+        font-size:13px;margin-top:14px}
+  .note{background:#f0fdf4;border:1px solid #bbf7d0;color:#065f46;border-radius:10px;padding:12px 14px;font-size:13px}
+  table{width:100%;border-collapse:collapse;font-size:13.5px;margin-top:8px}
+  th{text-align:left;background:#292524;color:#d6d3d1;font-size:10px;text-transform:uppercase;
+     letter-spacing:.05em;padding:7px 10px}
+  td{padding:7px 10px;border-bottom:1px solid #f0efed;vertical-align:top}
+  td code{font-size:12px;background:#f5f5f4;padding:1px 5px;border-radius:4px}
+  .tabs{display:flex;gap:5px;margin-bottom:0}
+  .tabs button{border:0;background:#e7e5e4;color:#57534e;padding:7px 14px;border-radius:8px 8px 0 0;
+               font-size:12.5px;font-weight:700;cursor:pointer}
+  .tabs button.on{background:var(--code);color:#fff}
+  footer{margin-top:44px;padding-top:18px;border-top:1px solid var(--line);font-size:12px;color:#a8a29e}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="head">
+    <div class="bar"></div>
+    <div>
+      <h1>gh-vehicle-duty API</h1>
+      <div class="sub">Ghana vehicle import duty · for developers</div>
+    </div>
+  </div>
+
+  <p style="margin-top:18px">Calculate Ghana customs duties and levies for imported vehicles. Reproduces the levy
+  schedule of a GRA Bill of Entry, validated line-by-line. Free, open source, MIT licensed.</p>
+
+  <div class="note">
+    <b>Writing JavaScript?</b> Use the library instead — no network call, works offline, and you stay pinned to a
+    known rate version.<br>
+    <code style="background:#dcfce7;padding:2px 6px;border-radius:4px;display:inline-block;margin-top:6px">npm install gh-vehicle-duty</code>
+  </div>
+
+  <h2>Try it</h2>
+  <div class="card">
+    <div style="margin-bottom:11px">
+      <label>API base URL</label>
+      <input id="base" placeholder="https://your-worker.workers.dev">
+    </div>
+    <div class="row">
+      <div><label>Customs value (GHS)</label><input id="cv" type="number" value="750093"></div>
+      <div><label>Duty rate</label>
+        <select id="dr"><option value="0.2">20% — passenger</option><option value="0.1">10% — pickup</option><option value="0.05">5%</option></select>
+      </div>
+    </div>
+    <div class="row">
+      <div><label>Body type (optional)</label><input id="bt" placeholder="SUV"></div>
+      <div><label>Engine cc (optional)</label><input id="cc" type="number" placeholder="3500"></div>
+    </div>
+    <button class="btn" id="go">Send request</button>
+    <div class="out" id="out"></div>
+  </div>
+
+  <h2>Endpoints</h2>
+  <table>
+    <tr><th style="width:130px">Endpoint</th><th>Description</th></tr>
+    <tr><td><span class="pill post">POST</span><code>/calculate</code></td><td>Duty breakdown from a JSON body.</td></tr>
+    <tr><td><span class="pill">GET</span><code>/calculate</code></td><td>Same, via query string.</td></tr>
+    <tr><td><span class="pill">GET</span><code>/rates</code></td><td>The full versioned levy schedule.</td></tr>
+    <tr><td><span class="pill">GET</span><code>/health</code></td><td>Uptime and rate freshness. Returns 503 when stale.</td></tr>
+    <tr><td><span class="pill">GET</span><code>/</code></td><td>Service info and parameter reference.</td></tr>
+  </table>
+
+  <h2>Code</h2>
+  <div class="tabs">
+    <button class="on" data-l="curl">curl</button>
+    <button data-l="py">Python</button>
+    <button data-l="js">JavaScript</button>
+    <button data-l="php">PHP</button>
+  </div>
+  <div class="pre-wrap">
+    <button class="copy" id="copy">Copy</button>
+    <pre id="snippet"></pre>
+  </div>
+
+  <h2>Parameters</h2>
+  <table>
+    <tr><th>Name</th><th>Notes</th></tr>
+    <tr><td><code>customsValue</code></td><td>CIF in GHS. Either this or <code>fob</code> + <code>exchangeRate</code>.</td></tr>
+    <tr><td><code>fob</code></td><td>Price in foreign currency.</td></tr>
+    <tr><td><code>freight</code>, <code>insurance</code></td><td>Optional. Insurance defaults to ~1% of <code>fob</code>.</td></tr>
+    <tr><td><code>exchangeRate</code></td><td>GHS per unit foreign currency.</td></tr>
+    <tr><td><code>depreciation</code></td><td>0–1. Used-vehicle valuation haircut.</td></tr>
+    <tr><td><code>dutyRate</code></td><td>0–1. Defaults to 0.20, or derived from <code>bodyType</code>.</td></tr>
+    <tr><td><code>bodyType</code></td><td>e.g. <code>SUV</code>, <code>Pickup</code>. Sets duty rate and HS code.</td></tr>
+    <tr><td><code>engineCC</code></td><td>Engine displacement, for HS classification.</td></tr>
+    <tr><td><code>processingFee</code></td><td>Boolean. Applies the 1% processing fee.</td></tr>
+  </table>
+
+  <h2>Check the rate version</h2>
+  <p>Ghana's levies change with each budget. Every response carries a <code>staleness</code> block and an
+  <code>X-Rates-Staleness</code> header. If it isn't <code>current</code>, warn your users.</p>
+  <div class="warn">
+    <b>Levels:</b> <code>current</code> → <code>aging</code> (365+ days — verify the rates still apply) →
+    <code>stale</code> (550+ days — <code>/health</code> returns 503).<br><br>
+    Don't cache results across a budget cycle. For production, deploy your own copy rather than depending on
+    someone else's.
+  </div>
+
+  <h2>Generate a client</h2>
+  <p>An <a href="https://github.com/YOUR-USERNAME/gh-vehicle-duty/blob/master/api/openapi.yaml">OpenAPI 3.1 spec</a>
+  is included, so you can generate a typed client for Java, C#, Swift, Kotlin, Go, or anything else:</p>
+  <div class="pre-wrap"><button class="copy" data-t="npx @openapitools/openapi-generator-cli generate \
+  -i openapi.yaml -g python -o ./client">Copy</button><pre>npx @openapitools/openapi-generator-cli generate \
+  -i openapi.yaml -g python -o ./client</pre></div>
+
+  <h2>Run your own</h2>
+  <p>Deploying takes about two minutes on Cloudflare's free tier — no command line needed. See
+  <a href="https://github.com/YOUR-USERNAME/gh-vehicle-duty/blob/master/api/DEPLOY.md">DEPLOY.md</a>.
+  There's no database and no auth; it's pure arithmetic.</p>
+
+  <footer>
+    <b>Estimate only.</b> This applies a levy schedule to a customs value you supply. It does not know GRA's official
+    valuation, which is assessed from the vehicle VIN against GRA's ICUMS/HDV benchmark. Not affiliated with or
+    endorsed by the Ghana Revenue Authority. Not a substitute for a licensed clearing agent.<br><br>
+    MIT licensed · <a href="https://github.com/YOUR-USERNAME/gh-vehicle-duty">Source on GitHub</a> ·
+    <a href="./">Calculator app</a>
+  </footer>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+const baseOr=()=>($("base").value.trim().replace(/\/+$/,"")||"https://your-worker.workers.dev");
+
+/* ---- live request ---- */
+$("go").onclick=async()=>{
+  const out=$("out"); out.style.display="block"; out.textContent="Sending…";
+  const body={customsValue:parseFloat($("cv").value)||0,dutyRate:parseFloat($("dr").value)};
+  if($("bt").value.trim())body.bodyType=$("bt").value.trim();
+  if($("cc").value)body.engineCC=parseFloat($("cc").value);
+  try{
+    const res=await fetch(baseOr()+"/calculate",{method:"POST",
+      headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
+    const data=await res.json();
+    const stale=res.headers.get("X-Rates-Staleness");
+    out.textContent=`HTTP ${res.status}   X-Rates-Staleness: ${stale||"—"}\n\n`+JSON.stringify(data,null,2);
+  }catch(e){
+    out.textContent="Request failed: "+e.message+
+      "\n\nCheck the base URL is correct and the worker is deployed.";
+  }
+};
+
+/* ---- code snippets ---- */
+const snips={
+curl:()=>`curl -X POST ${baseOr()}/calculate \\
+  -H "Content-Type: application/json" \\
+  -d '{"customsValue": 750093, "dutyRate": 0.20}'`,
+py:()=>`import requests
+
+r = requests.post("${baseOr()}/calculate",
+                  json={"customsValue": 750093, "dutyRate": 0.20})
+data = r.json()
+
+if data["staleness"]["level"] != "current":
+    print("WARNING:", data["staleness"]["message"])
+
+print(f"Total: GHS {data['total']:,.2f}  ({data['effectiveRate']:.1%})")`,
+js:()=>`const res = await fetch("${baseOr()}/calculate", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ customsValue: 750093, dutyRate: 0.20 }),
+});
+const data = await res.json();
+
+if (res.headers.get("X-Rates-Staleness") !== "current") {
+  console.warn("Duty rates may be out of date");
+}
+console.log(data.total, data.effectiveRate);`,
+php:()=>`$ch = curl_init("${baseOr()}/calculate");
+curl_setopt_array($ch, [
+  CURLOPT_POST => true,
+  CURLOPT_RETURNTRANSFER => true,
+  CURLOPT_HTTPHEADER => ["Content-Type: application/json"],
+  CURLOPT_POSTFIELDS => json_encode(["customsValue" => 750093]),
+]);
+$data = json_decode(curl_exec($ch), true);
+echo number_format($data["total"], 2);`
+};
+let lang="curl";
+function paint(){ $("snippet").textContent=snips[lang](); }
+document.querySelectorAll(".tabs button").forEach(b=>b.onclick=()=>{
+  document.querySelectorAll(".tabs button").forEach(x=>x.classList.remove("on"));
+  b.classList.add("on"); lang=b.dataset.l; paint();
+});
+$("base").addEventListener("input",paint);
+paint();
+
+/* ---- copy buttons ---- */
+document.querySelectorAll(".copy").forEach(btn=>btn.onclick=()=>{
+  const text=btn.dataset.t || btn.parentElement.querySelector("pre").textContent;
+  navigator.clipboard.writeText(text).then(()=>{
+    const o=btn.textContent; btn.textContent="Copied"; setTimeout(()=>btn.textContent=o,1200);
+  });
+});
+</script>
+</body>
+</html>

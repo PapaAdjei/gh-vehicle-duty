@@ -1,0 +1,44 @@
+{
+  "name": "gh-vehicle-duty",
+  "version": "1.0.0",
+  "description": "Ghana vehicle import duty and levy calculator \u2014 reproduces the GRA Customs Bill of Entry levy schedule.",
+  "type": "module",
+  "main": "src/duty.js",
+  "exports": {
+    ".": "./src/duty.js"
+  },
+  "files": [
+    "src",
+    "api",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "test": "node --test test/*.test.js",
+    "example": "node examples/basic.js",
+    "test:api": "node --test test/*.test.js",
+    "api:dev": "cd api && wrangler dev",
+    "api:deploy": "cd api && wrangler deploy",
+    "api:bundle": "node api/bundle.mjs"
+  },
+  "keywords": [
+    "ghana",
+    "customs",
+    "import-duty",
+    "gra",
+    "icums",
+    "vehicle",
+    "tax",
+    "calculator",
+    "cedi"
+  ],
+  "license": "MIT",
+  "engines": {
+    "node": ">=18"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/YOUR-USERNAME/gh-vehicle-duty.git"
+  },
+  "sideEffects": false
+}
