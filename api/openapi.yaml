@@ -29,7 +29,7 @@ info:
     url: https://github.com/YOUR-USERNAME/gh-vehicle-duty
 
 servers:
-  - url: https://gh-vehicle-duty-api.YOUR-SUBDOMAIN.workers.dev
+  - url: https://https://gh-vehicle-duty-api.kadjeilartey.workers.dev/
     description: Replace with your deployment
 
 tags:
