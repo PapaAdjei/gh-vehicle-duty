@@ -21,9 +21,9 @@
  * ------------------------------------------------------------------ */
 
 export const RATES = Object.freeze({
-  version: "2026.1",
+  version: "2026.2",
   validFrom: "2026-01-01",
-  source: "Validated against a GRA Customs Bill of Entry (post-Jan-2026 VAT reform).",
+  source: "Validated line-by-line against two independent GRA Bills of Entry (post-Jan-2026 VAT reform).",
   currency: "GHS",
 
   /** Levies charged on the customs value (CIF in GHS). */
@@ -52,11 +52,39 @@ export const RATES = Object.freeze({
     Object.freeze({ code: "89", name: "Network Charge GET Fund", rate: 0.025 }),
   ]),
 
-  /** Flat fees in GHS. */
+  /** Flat fee in GHS, consistent across entries. */
   fixedFees: Object.freeze([
     Object.freeze({ code: "45", name: "Ghana Shippers Authority SNF", amount: 12.0 }),
-    Object.freeze({ code: "63", name: "GHS Disinfection Fee", amount: 410.76 }),
   ]),
+
+  /**
+   * GHS Disinfection Fee (code 63) — set by the health authority at clearing,
+   * not computed from a rate. It varies per entry (410.76 and 577.79 observed
+   * on two entries). We expose a default estimate and the observed range so
+   * callers can pass their own figure; it is NEVER presented as computed.
+   */
+  disinfectionFee: Object.freeze({
+    code: "63",
+    name: "GHS Disinfection Fee",
+    estimate: 494.28,        // midpoint of observed entries
+    observedMin: 410.76,
+    observedMax: 577.79,
+    note: "Authority-set; varies per entry. Estimate only — enter your actual figure if known.",
+  }),
+
+  /**
+   * 1% Withholding Tax on Import (code 56) — an advance income-tax payment,
+   * not a duty. Applies to commercial importers; registered businesses with a
+   * valid tax clearance may be exempt, and it is often absent for individuals.
+   * OFF by default; enable per the importer's tax status.
+   */
+  withholdingTax: Object.freeze({ code: "56", name: "1% Withholding Tax on Import", rate: 0.01 }),
+
+  /**
+   * MoTI e-IDF Fee (code 72) — flat, authority-set. Seen as 0.00 and 5.00 on
+   * two entries. Off by default; pass `motiFee` to include it.
+   */
+  motiFee: Object.freeze({ code: "72", name: "MoTI e-IDF Fee", typical: 5.0 }),
 
   /** Optional processing fee (code 05); often assessed at 0. */
   processingFee: Object.freeze({ code: "05", name: "Processing Fee", rate: 0.01 }),
@@ -144,15 +172,22 @@ export function customsValueFromInvoice({
  * @param {number} [o.fobGhs]            FOB in GHS (network-charge base). Defaults to customsValue.
  * @param {number} [o.dutyRate=0.20]     Import duty rate as a fraction.
  * @param {boolean} [o.processingFee=false] Apply the 1% processing fee.
- * @param {boolean} [o.includeFixedFees=true] Include flat fees (SNF, disinfection).
+ * @param {boolean} [o.withholdingTax=false] Apply the 1% import withholding tax (commercial importers).
+ * @param {number} [o.disinfectionFee]   Authority-set disinfection fee in GHS. Defaults to the
+ *                                        observed estimate; pass 0 to exclude, or your actual figure.
+ * @param {number} [o.motiFee]           MoTI e-IDF fee in GHS (flat, authority-set). Omitted unless supplied.
+ * @param {boolean} [o.includeFixedFees=true] Include the flat SNF fee and disinfection estimate.
  * @param {object} [o.rates=RATES]       Override the rate schedule.
- * @returns {object} breakdown with `lines`, `total`, `effectiveRate`, `ratesVersion`
+ * @returns {object} breakdown with `lines`, `total`, `computedTotal`, `effectiveRate`, `ratesVersion`
  */
 export function calculateDuty({
   customsValue,
   fobGhs,
   dutyRate = RATES.dutyRates.passenger,
   processingFee = false,
+  withholdingTax = false,
+  disinfectionFee,
+  motiFee,
   includeFixedFees = true,
   rates = RATES,
 } = {}) {
@@ -177,6 +212,15 @@ export function calculateDuty({
       code: rates.processingFee.code, name: rates.processingFee.name, base: "customsValue",
       baseAmount: customsValue, rate: rates.processingFee.rate,
       amount: customsValue * rates.processingFee.rate,
+    });
+  }
+
+  // 2b. Optional 1% withholding tax — on customs value. Commercial importers.
+  if (withholdingTax) {
+    lines.push({
+      code: rates.withholdingTax.code, name: rates.withholdingTax.name, base: "customsValue",
+      baseAmount: customsValue, rate: rates.withholdingTax.rate,
+      amount: customsValue * rates.withholdingTax.rate, kind: "conditional",
     });
   }
 
@@ -210,7 +254,10 @@ export function calculateDuty({
     });
   }
 
-  // 6. Flat fees.
+  // Everything above is computed (a rate applied to a base) — provably exact.
+  const computedTotal = lines.reduce((sum, l) => sum + l.amount, 0);
+
+  // 6. Flat fee (SNF) — consistent across entries, so treated as computed.
   if (includeFixedFees) {
     for (const fee of rates.fixedFees) {
       lines.push({
@@ -218,6 +265,37 @@ export function calculateDuty({
         baseAmount: null, rate: null, amount: fee.amount,
       });
     }
+  }
+
+  // 7. Disinfection fee — authority-set, NOT computed. Estimate unless caller supplies a figure.
+  const df = rates.disinfectionFee;
+  const disinfectionAmount =
+    disinfectionFee !== undefined && isFinite(disinfectionFee)
+      ? disinfectionFee
+      : includeFixedFees
+      ? df.estimate
+      : 0;
+  const disinfectionIsEstimate = !(disinfectionFee !== undefined && isFinite(disinfectionFee));
+  if (disinfectionAmount > 0) {
+    lines.push({
+      code: df.code,
+      name: df.name + (disinfectionIsEstimate ? " (est.)" : ""),
+      base: "authority-set",
+      baseAmount: null,
+      rate: null,
+      amount: disinfectionAmount,
+      kind: "estimate",
+      estimated: disinfectionIsEstimate,
+      observedRange: [df.observedMin, df.observedMax],
+    });
+  }
+
+  // 8. MoTI e-IDF fee — flat, authority-set. Only when supplied.
+  if (motiFee !== undefined && isFinite(motiFee) && motiFee > 0) {
+    lines.push({
+      code: rates.motiFee.code, name: rates.motiFee.name, base: "authority-set",
+      baseAmount: null, rate: null, amount: motiFee, kind: "flat",
+    });
   }
 
   const total = lines.reduce((sum, l) => sum + l.amount, 0);
@@ -228,14 +306,25 @@ export function calculateDuty({
     vatBase,
     importDuty: duty,
     lines,
+    // `computedTotal` is the sum of everything derived from a rate — exact and
+    // validated. `total` adds authority-set fees (disinfection), which are
+    // estimates unless you supplied the figure. Prefer showing both.
+    computedTotal,
     total,
+    disinfection: {
+      amount: disinfectionAmount,
+      estimated: disinfectionIsEstimate,
+      observedRange: [df.observedMin, df.observedMax],
+      note: df.note,
+    },
     effectiveRate: customsValue > 0 ? total / customsValue : 0,
     currency: rates.currency,
     ratesVersion: rates.version,
     validFrom: rates.validFrom,
     disclaimer:
       "Estimate only. GRA assesses the official customs value from the vehicle VIN " +
-      "against its ICUMS/HDV benchmark. Confirm with a licensed clearing agent.",
+      "against its ICUMS/HDV benchmark. The disinfection fee is authority-set and varies. " +
+      "Confirm with a licensed clearing agent.",
   };
 }
 
