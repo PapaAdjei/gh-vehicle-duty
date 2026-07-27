@@ -124,6 +124,14 @@ function handleCalculate(input) {
   let rate = dutyRate;
   if (rate === undefined) rate = bodyType ? dutyRateForBody(bodyType) : RATES.dutyRates.passenger;
 
+  const bool = (v) => v === true || v === "true";
+  const feeOpts = {
+    processingFee: bool(input.processingFee),
+    withholdingTax: bool(input.withholdingTax),
+    disinfectionFee: toNum(input.disinfectionFee),
+    motiFee: toNum(input.motiFee),
+  };
+
   try {
     let result;
     if (customsValue !== undefined) {
@@ -131,8 +139,8 @@ function handleCalculate(input) {
         customsValue,
         fobGhs: toNum(input.fobGhs),
         dutyRate: rate,
-        processingFee: input.processingFee === true || input.processingFee === "true",
         includeFixedFees: !(input.includeFixedFees === false || input.includeFixedFees === "false"),
+        ...feeOpts,
       });
     } else {
       const exchangeRate = toNum(input.exchangeRate);
@@ -145,7 +153,7 @@ function handleCalculate(input) {
         exchangeRate,
         depreciation: toNum(input.depreciation) || 0,
         dutyRate: rate,
-        processingFee: input.processingFee === true || input.processingFee === "true",
+        ...feeOpts,
       });
     }
 
@@ -228,8 +236,11 @@ export default {
           bodyType: "string — e.g. 'SUV', 'Pickup'. Sets duty rate and HS code.",
           engineCC: "number — engine displacement, for HS classification.",
           processingFee: "boolean — apply the 1% processing fee.",
+          withholdingTax: "boolean — apply the 1% import withholding tax (commercial importers).",
+          disinfectionFee: "number — authority-set disinfection fee in GHS; defaults to an estimate.",
+          motiFee: "number — flat MoTI e-IDF fee in GHS; omitted unless supplied.",
         },
-        source: "https://github.com/PapaAdjei/gh-vehicle-duty",
+        source: "https://github.com/PapaAdjei/gh-duty",
         disclaimer: DISCLAIMER,
       });
     }
