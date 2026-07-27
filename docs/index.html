@@ -164,6 +164,12 @@
       </div>
 
       <label class="chk"><input type="checkbox" id="proc"> Add 1% processing fee</label>
+      <label class="chk"><input type="checkbox" id="wht"> Add 1% withholding tax <span style="color:#a8a29e;font-weight:400">· commercial importers</span></label>
+      <div class="field" style="margin-top:11px">
+        <label class="lbl">GHS Disinfection fee <span id="disAuto" style="font-weight:600;text-transform:none;letter-spacing:0;color:#a8a29e">· estimate</span></label>
+        <input type="number" id="disinf" placeholder="494.28">
+        <div class="hint">Set by the health authority at clearing, so it varies (observed GHS 410–578). Pre-filled with an estimate — enter your actual figure if you have it.</div>
+      </div>
     </div>
 
     <!-- results -->
@@ -212,11 +218,11 @@ function bodyIsPickup(b){ b=(b||"").toLowerCase(); return b.includes("pickup")||
 function dutyForBody(b){ return bodyIsPickup(b)?0.10:0.20; }
 function hsBand(cc){ if(!cc)return"8703"; if(cc<=1000)return"8703.21"; if(cc<=1500)return"8703.22"; if(cc<=3000)return"8703.23"; return"8703.24"; }
 
-const S={cond:"used",mode:"invoice",duty:0.2,dep:0,proc:false};
+const S={cond:"used",mode:"invoice",duty:0.2,dep:0,proc:false,wht:false};
 const CV=[["06","ECOWAS Levy (ETLS)",.005],["31","Vehicle Examination Fee",.01],["78","Special Import Levy",.02],["87","EXIM Bank Levy",.0075],["98","African Union Import Levy",.002]];
 const VAT=[["02","Import VAT",.15],["47","Import NHIL",.025],["88","GET Fund Levy",.025]];
 const NCS=[["33","Network Charge VAT",.15],["48","Network Charge NHIL",.025],["89","Network Charge GET Fund",.025]];
-const SHIP=12, DISINF=410.76, NOW=2026;
+const SHIP=12, DISINF_EST=494.28, NOW=2026;
 const $=id=>document.getElementById(id);
 const num=id=>parseFloat($(id).value)||0;
 const f=n=>new Intl.NumberFormat("en-GH",{minimumFractionDigits:2,maximumFractionDigits:2}).format(isFinite(n)?n:0);
@@ -229,15 +235,18 @@ function calc(){
     const r=num("rate"),eff=num("fob")*(1-dep);
     fobGhs=eff*r; cv=(eff+num("freight")+insuranceValue())*r;
   }else{ cv=num("cvDirect")*(1-dep); fobGhs=cv; }
-  const duty=cv*S.duty, proc=S.proc?cv*0.01:0;
+  const duty=cv*S.duty, proc=S.proc?cv*0.01:0, wht=S.wht?cv*0.01:0;
   const cvL=CV.map(([c,n,rt])=>[c,n,rt,cv*rt]);
   const vatBase=cv+duty;
   const vatL=VAT.map(([c,n,rt])=>[c,n,rt,vatBase*rt]);
   const nc=fobGhs*0.004;
   const ncL=NCS.map(([c,n,rt])=>[c,n,rt,nc*rt]);
-  let total=duty+proc+SHIP+DISINF+nc;
+  const disTyped=$("disinf").value.trim();
+  const disEst=disTyped===""||isNaN(parseFloat(disTyped));
+  const disinf=disEst?DISINF_EST:parseFloat(disTyped);
+  let total=duty+proc+wht+SHIP+disinf+nc;
   cvL.forEach(x=>total+=x[3]); vatL.forEach(x=>total+=x[3]); ncL.forEach(x=>total+=x[3]);
-  return {cv,duty,proc,cvL,vatBase,vatL,nc,ncL,total,eff:cv>0?total/cv:0};
+  return {cv,duty,proc,wht,cvL,vatBase,vatL,nc,ncL,disinf,disEst,total,eff:cv>0?total/cv:0};
 }
 function render(){
   const r=calc();
@@ -254,15 +263,16 @@ function render(){
   $("tTotal").textContent=f(r.total); $("tCv").textContent=f(r.cv); $("tEff").textContent=p(r.eff);
   let h=`<tr class="strong"><td class="code">01</td><td class="nm">Import Duty</td><td class="rt">${p(S.duty)}</td><td class="amt">${f(r.duty)}</td></tr>`;
   if(r.proc>0)h+=`<tr><td class="code">05</td><td>Processing Fee</td><td class="rt">1%</td><td class="amt">${f(r.proc)}</td></tr>`;
+  if(r.wht>0)h+=`<tr><td class="code">56</td><td>Withholding Tax on Import</td><td class="rt">1%</td><td class="amt">${f(r.wht)}</td></tr>`;
   r.cvL.forEach(([c,n,rt,a])=>h+=`<tr><td class="code">${c}</td><td>${n}</td><td class="rt">${p(rt)}</td><td class="amt">${f(a)}</td></tr>`);
   h+=`<tr class="sec"><td colspan="4">On VAT base (CIF + duty = GH₵ ${f(r.vatBase)})</td></tr>`;
   r.vatL.forEach(([c,n,rt,a])=>h+=`<tr><td class="code">${c}</td><td>${n}</td><td class="rt">${p(rt)}</td><td class="amt">${f(a)}</td></tr>`);
   h+=`<tr class="sec"><td colspan="4">Network charges (on FOB)</td></tr>`;
   h+=`<tr><td class="code">32</td><td>Network Charge</td><td class="rt">0.4%</td><td class="amt">${f(r.nc)}</td></tr>`;
   r.ncL.forEach(([c,n,rt,a])=>h+=`<tr><td class="code">${c}</td><td>${n}</td><td class="rt">${p(rt)}</td><td class="amt">${f(a)}</td></tr>`);
-  h+=`<tr class="sec"><td colspan="4">Fixed fees</td></tr>`;
+  h+=`<tr class="sec"><td colspan="4">Fees</td></tr>`;
   h+=`<tr><td class="code">45</td><td>Shippers Authority SNF</td><td class="rt">flat</td><td class="amt">${f(SHIP)}</td></tr>`;
-  h+=`<tr><td class="code">63</td><td>GHS Disinfection Fee</td><td class="rt">flat</td><td class="amt">${f(DISINF)}</td></tr>`;
+  h+=`<tr><td class="code">63</td><td>GHS Disinfection${r.disEst?` <span style="color:#a16207;font-size:10px">est.</span>`:``}</td><td class="rt">${r.disEst?"~":"set"}</td><td class="amt">${f(r.disinf)}</td></tr>`;
   h+=`<tr class="grand"><td colspan="2" class="nm">TOTAL PAYABLE</td><td></td><td class="amt">${f(r.total)}</td></tr>`;
   $("rows").innerHTML=h;
 }
@@ -353,6 +363,8 @@ seg("modeSeg","mode",()=>{$("invoiceBox").style.display=S.mode==="invoice"?"":"n
 seg("dutyRates","duty",()=>$("autoRate").textContent="");
 $("dep").oninput=e=>{S.dep=+e.target.value;$("depVal").textContent=S.dep+"%";render();};
 $("proc").onchange=e=>{S.proc=e.target.checked;render();};
+$("wht").onchange=e=>{S.wht=e.target.checked;render();};
+$("disinf").oninput=()=>{const t=$("disinf").value.trim();$("disAuto").textContent=(t===""||isNaN(parseFloat(t)))?"· estimate":"· your figure";render();};
 $("year").oninput=checkAge;
 $("vinBtn").onclick=decodeVin;
 $("vin").addEventListener("keydown",e=>{ if(e.key==="Enter")decodeVin(); });
